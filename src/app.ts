@@ -4,8 +4,12 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 
+import sequelize from './config/db';
+
 import swaggerSpec from './docs/swagger';
 import errorHandler from './middlewares/errorMiddleware';
+
+import authRoutes from "./routes/authRoutes"
 
 const app: Application = express();
 
@@ -22,5 +26,19 @@ app.get('/', (req, res) => {
 });
 
 app.use(errorHandler);
+
+(async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('DB connected');
+
+    await sequelize.sync({ alter: true }); // creates table if not exists
+    console.log('Models synced');
+  } catch (error) {
+    console.error('DB connection failed:', error);
+  }
+})();
+
+app.use('/api/auth', authRoutes);
 
 export default app;

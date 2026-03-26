@@ -6,14 +6,20 @@ const options = {
     info: {
       title: 'Book Store API',
       version: '1.0.0',
+      description: 'API documentation for Online Book Shop',
     },
-    servers: [
-      {
-        url: 'http://localhost:5000/api',
+    servers: [{ url: 'http://localhost:5000/api' }],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
       },
-    ],
+    },
   },
-  apis: ['./src/routes/*.ts'],
+  apis: ['./src/routes/*.ts'], // make sure routes path is correct
 };
 
 const swaggerSpec = swaggerJsdoc(options);
