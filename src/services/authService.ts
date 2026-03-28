@@ -48,8 +48,6 @@ export const registerUser = async (data: RegisterUserInput) => {
   if (profileImage) {
     const uploadResult = await uploadOnCloudinary(profileImage);
 
-    console.log(uploadResult); 
-
     if (!uploadResult) {
       throw new ApiError(500, "Image upload failed");
     }
