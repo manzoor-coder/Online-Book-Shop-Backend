@@ -172,3 +172,92 @@ export const resetPassword = async (
 
   return new ApiResponse(200, null, "Password reset successfully");
 };
+
+// Get Current User 
+
+export const getCurrentUser = async (
+  userId: number
+): Promise<ApiResponse<any>> => {
+
+  const user = await User.findByPk(userId);
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  // ✅ remove password
+  const userData = user.toJSON();
+  const { password: _password, ...safeUser } = userData;
+
+  return new ApiResponse(
+    200,
+    { user: safeUser },
+    "User profile fetched successfully"
+  );
+};
+
+// update profile
+export const updateUserProfile = async (
+  userId: number,
+  data: Partial<RegisterUserInput>
+): Promise<ApiResponse<any>> => {
+  const { firstName, lastName, phone, address, profileImage } = data;
+
+  const user = await User.findByPk(userId);
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  // ✅ Upload new image if provided
+  let uploadedImageUrl: string | undefined;
+
+  if (profileImage) {
+    const uploadResult = await uploadOnCloudinary(profileImage);
+
+    if (!uploadResult) {
+      throw new ApiError(500, "Image upload failed");
+    }
+
+    uploadedImageUrl = uploadResult.secure_url;
+  }
+
+  // ✅ Update only provided fields
+  if (firstName) user.firstName = firstName;
+  if (lastName) user.lastName = lastName;
+  if (phone) user.phone = phone;
+  if (address) user.address = address;
+  if (uploadedImageUrl) user.profileImage = uploadedImageUrl;
+
+  await user.save();
+
+  // ✅ Remove password
+  const userData = user.toJSON();
+  const { password: _password, ...safeUser } = userData;
+
+  return new ApiResponse(
+    200,
+    { user: safeUser },
+    "Profile updated successfully"
+  );
+};
+
+// Delete User
+export const deleteUser = async (
+  userId: number
+): Promise<ApiResponse<null>> => {
+
+  const user = await User.findByPk(userId);
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  await user.destroy();
+
+  return new ApiResponse(
+    200,
+    null,
+    "User deleted successfully"
+  );
+};

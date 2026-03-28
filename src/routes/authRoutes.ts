@@ -6,6 +6,9 @@ import {
   login,
   forgotPassword,
   resetPasswordController,
+  updateProfile,
+  getProfile,
+  deleteAccount,
 } from '../controllers/authController';
 import upload from '../config/multer';
 
@@ -165,5 +168,17 @@ router.post('/reset-password', resetPasswordController);
  *         description: Profile updated successfully
  */
 // router.put('/profile', protect, updateProfile);
+
+router.put(
+  '/update-profile',
+  protect,
+  upload.single('profileImage'),
+  updateProfile
+);
+
+
+router.get('/me', protect, getProfile);
+
+router.delete('/delete-account', protect, deleteAccount);
 
 export default router;

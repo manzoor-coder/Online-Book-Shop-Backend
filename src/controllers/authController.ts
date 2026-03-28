@@ -5,7 +5,11 @@ import {
   loginUser,
   generateResetToken,
   resetPassword,
+  getCurrentUser,
+  deleteUser,
 } from '../services/authService';
+import { updateUserProfile } from '../services/authService';
+import { AuthRequest } from '../types/express';
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
 
@@ -39,6 +43,35 @@ export const resetPasswordController = asyncHandler(
     const { token, password } = req.body;
 
     const response = await resetPassword(token, password);
+
+    res.status(response.statusCode).json(response);
+  }
+);
+
+// Get Current User
+export const getProfile = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const response = await getCurrentUser(req.user!.id);
+
+    res.status(response.statusCode).json(response);
+  }
+);
+
+export const updateProfile = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const response = await updateUserProfile(req.user!.id, {
+      ...req.body,
+      profileImage: req.file?.path, // multer
+    });
+
+    res.status(response.statusCode).json(response);
+  }
+);
+
+// Delete User
+export const deleteAccount = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const response = await deleteUser(req.user!.id);
 
     res.status(response.statusCode).json(response);
   }
