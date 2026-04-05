@@ -13,7 +13,7 @@ interface RegisterUserInput {
   address: string;
   email: string;
   password: string;
-  profileImage?: string; // local file path (from multer)
+  profileImage?: Buffer; // local file path (from multer)
 }
 
 interface LoginResponse {
@@ -28,10 +28,17 @@ const generateToken = (id: number) => {
 };
 
 export const registerUser = async (data: RegisterUserInput) => {
-  const { firstName, lastName, phone, address, email, password, profileImage } =
-    data;
+  const {
+    firstName,
+    lastName,
+    phone,
+    address,
+    email,
+    password,
+    profileImage,
+  } = data;
 
-  // ✅ Validate
+  // ✅ Validate fields
   if (!firstName || !lastName || !phone || !address || !email || !password) {
     throw new ApiError(400, "Please fill all required fields.");
   }
@@ -42,23 +49,31 @@ export const registerUser = async (data: RegisterUserInput) => {
     throw new ApiError(400, "User already exists");
   }
 
-  // ✅ Upload image (if exists)
-  let uploadedImageUrl: string | undefined = undefined;
+  let uploadedImageUrl: string | undefined;
 
+  // ✅ Upload image (with safety)
   if (profileImage) {
-    const uploadResult = await uploadOnCloudinary(profileImage);
+    console.log("Uploading image to Cloudinary...");
 
-    if (!uploadResult) {
+    try {
+      const uploadResult = await uploadOnCloudinary(profileImage, {
+    folder: 'users',
+    width: 300,
+    height: 300,
+  });
+
+
+      uploadedImageUrl = uploadResult.secure_url;
+    } catch (error) {
+      console.error("Cloudinary Upload Failed:", error);
       throw new ApiError(500, "Image upload failed");
     }
-
-    uploadedImageUrl = uploadResult.secure_url;
   }
 
   // ✅ Hash password
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // ✅ Create user (only required fields)
+  // ✅ Create user
   const user = await User.create({
     firstName,
     lastName,
@@ -70,14 +85,11 @@ export const registerUser = async (data: RegisterUserInput) => {
   });
 
   const userData = user.toJSON();
-  const { password: _password, ...safeUser } = userData;
+  const { password: _password, profileImage: _profileImage, ...safeUser } = userData;
 
-  // ✅ Return ApiResponse
   return new ApiResponse(
-    200, 
-    {
-      user: safeUser
-    }, 
+    201, // ✅ FIXED
+    { user: safeUser },
     "User registered successfully"
   );
 };
@@ -211,7 +223,11 @@ export const updateUserProfile = async (
   let uploadedImageUrl: string | undefined;
 
   if (profileImage) {
-    const uploadResult = await uploadOnCloudinary(profileImage);
+    const uploadResult = await uploadOnCloudinary(profileImage, {
+      folder: 'users',
+      width: 300,
+      height: 300,
+    });
 
     if (!uploadResult) {
       throw new ApiError(500, "Image upload failed");

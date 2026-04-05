@@ -12,6 +12,7 @@ import errorHandler from './middlewares/errorMiddleware';
 import authRoutes from "./routes/authRoutes"
 
 import bookRoutes from './routes/bookRoutes';
+import categoryRoutes from './routes/categoryRoutes';
 
 const app: Application = express();
 
@@ -44,5 +45,6 @@ app.use(errorHandler);
 app.use('/api/auth', authRoutes);
 
 app.use('/api/books', bookRoutes);
+app.use('/api/categories', categoryRoutes);
 
 export default app;

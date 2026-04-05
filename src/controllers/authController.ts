@@ -13,9 +13,11 @@ import { AuthRequest } from '../types/express';
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
 
+   console.log("BODY:", req.body);
+  console.log("FILE:", req.file);
   const response = await registerUser({
     ...req.body,
-    profileImage: req.file?.path, // if using multer
+    profileImage: req.file?.buffer, // if using multer
   });
 
   res.status(response.statusCode).json(response);
@@ -61,7 +63,7 @@ export const updateProfile = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const response = await updateUserProfile(req.user!.id, {
       ...req.body,
-      profileImage: req.file?.path, // multer
+      profileImage: req.file?.buffer, // multer
     });
 
     res.status(response.statusCode).json(response);

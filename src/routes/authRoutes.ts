@@ -10,7 +10,7 @@ import {
   getProfile,
   deleteAccount,
 } from '../controllers/authController';
-import upload from '../config/multer';
+import upload from '../middlewares/uploadMiddleware';
 
 const router = express.Router();
 
@@ -30,7 +30,7 @@ const router = express.Router();
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:   # ✅ FIX
  *           schema:
  *             type: object
  *             required:
@@ -55,9 +55,7 @@ const router = express.Router();
  *                 type: string
  *               profileImage:
  *                 type: string
- *     responses:
- *       201:
- *         description: User created successfully
+ *                 format: binary   # ✅ VERY IMPORTANT
  */
 router.post('/register', upload.single('profileImage'), register);
 
@@ -138,7 +136,7 @@ router.post('/reset-password', resetPasswordController);
 
 /**
  * @swagger
- * /auth/profile:
+ * /auth/update-profile:
  *   put:
  *     summary: Update user profile
  *     tags: [Auth]
@@ -147,7 +145,7 @@ router.post('/reset-password', resetPasswordController);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:   # ✅ FIX
  *           schema:
  *             type: object
  *             properties:
@@ -163,11 +161,8 @@ router.post('/reset-password', resetPasswordController);
  *                 type: string
  *               profileImage:
  *                 type: string
- *     responses:
- *       200:
- *         description: Profile updated successfully
+ *                 format: binary   # ✅ IMPORTANT
  */
-// router.put('/profile', protect, updateProfile);
 
 router.put(
   '/update-profile',

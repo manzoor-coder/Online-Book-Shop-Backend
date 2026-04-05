@@ -1,5 +1,4 @@
-import { v2 as cloudinary } from 'cloudinary';
-import fs from 'fs';
+import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -10,28 +9,46 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
 
-const uploadOnCloudinary = async (localFilePath: string) => {
-  try {
-    if (!localFilePath) return null;
+interface UploadOptions {
+  folder?: string;
+  width?: number;
+  height?: number;
+}
 
-    const response = await cloudinary.uploader.upload(localFilePath, {
-      resource_type: 'auto',
-    });
+const uploadOnCloudinary = (
+  fileBuffer: Buffer,
+  options?: UploadOptions
+): Promise<UploadApiResponse> => {
+  return new Promise((resolve, reject) => {
+    if (!fileBuffer) return reject("No file buffer");
 
-    // ✅ delete temp file after upload
-    fs.unlinkSync(localFilePath);
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: options?.folder || 'general', // ✅ dynamic
+        resource_type: 'image',
 
-    return response;
+        // ✅ optional optimization
+        transformation: [
+          {
+            width: options?.width || 500,
+            height: options?.height || 500,
+            crop: 'limit',
+          },
+          { quality: 'auto' },
+          { fetch_format: 'auto' },
+        ],
+      },
+      (error, result) => {
+        if (error || !result) {
+          console.error("Cloudinary Error:", error);
+          return reject(error);
+        }
+        resolve(result);
+      }
+    );
 
-  } catch (error) {
-    console.error("Cloudinary upload error:", error);
-
-    if (localFilePath && fs.existsSync(localFilePath)) {
-      fs.unlinkSync(localFilePath);
-    }
-
-    return null;
-  }
+    stream.end(fileBuffer);
+  });
 };
 
 export { uploadOnCloudinary };
