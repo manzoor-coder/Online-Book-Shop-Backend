@@ -15,6 +15,7 @@ import bookRoutes from './routes/bookRoutes';
 import categoryRoutes from './routes/categoryRoutes';
 
 import cartRoutes from './routes/cartRoutes';
+import orderRoutes from './routes/orderRoutes';
 
 const app: Application = express();
 
@@ -50,5 +51,6 @@ app.use('/api/books', bookRoutes);
 app.use('/api/categories', categoryRoutes);
 
 app.use('/api/cart', cartRoutes);
+app.use('/api/orders', orderRoutes);
 
 export default app;
