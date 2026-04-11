@@ -14,6 +14,8 @@ import authRoutes from "./routes/authRoutes"
 import bookRoutes from './routes/bookRoutes';
 import categoryRoutes from './routes/categoryRoutes';
 
+import cartRoutes from './routes/cartRoutes';
+
 const app: Application = express();
 
 app.use(express.json());
@@ -46,5 +48,7 @@ app.use('/api/auth', authRoutes);
 
 app.use('/api/books', bookRoutes);
 app.use('/api/categories', categoryRoutes);
+
+app.use('/api/cart', cartRoutes);
 
 export default app;
