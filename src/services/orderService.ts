@@ -5,45 +5,67 @@ import CartItem from '../models/CartItem.models';
 import Book from '../models/Book.models';
 import ApiError from '../utils/apiError';
 import sequelize from '../config/db';
+import { PaymentStatus } from '../enums/paymentStatus.enum';
 
-
-export const createOrder = async (userId: number) => {
+export const createOrder = async (
+  userId: number,
+  stripeSessionId?: string,
+  paymentIntentId?: string
+) => {
   const transaction = await sequelize.transaction();
 
   try {
-    const cart = await Cart.findOne({ where: { userId }, transaction });
+    // 1️⃣ Get Cart
+    const cart = await Cart.findOne({
+      where: { userId },
+      transaction,
+    });
 
     if (!cart) {
       throw new ApiError(404, 'Cart not found');
     }
 
+    // 2️⃣ Get Cart Items
     const items = await CartItem.findAll({
       where: { cartId: cart.id },
       include: [Book],
       transaction,
     });
 
-    if (items.length === 0) {
+    if (!items.length) {
       throw new ApiError(400, 'Cart is empty');
     }
 
+    // 3️⃣ Calculate Total
     let totalAmount = 0;
 
     for (const item of items) {
       const book = (item as any).Book;
 
+      if (!book) {
+        throw new ApiError(404, 'Book not found');
+      }
+
       totalAmount += book.price * item.quantity;
     }
 
+    // 4️⃣ CREATE ORDER (PENDING by default)
     const order = await Order.create(
       {
         userId,
         totalAmount,
         status: 'pending',
+
+        // 🔥 IMPORTANT: default state BEFORE webhook confirmation
+        paymentStatus: PaymentStatus.PENDING,
+
+        stripeSessionId: stripeSessionId || null,
+        paymentIntentId: paymentIntentId || null,
       },
       { transaction }
     );
 
+    // 5️⃣ CREATE ORDER ITEMS
     for (const item of items) {
       const book = (item as any).Book;
 
@@ -58,7 +80,7 @@ export const createOrder = async (userId: number) => {
       );
     }
 
-    // Clear cart
+    // 6️⃣ CLEAR CART
     await CartItem.destroy({
       where: { cartId: cart.id },
       transaction,
@@ -71,52 +93,4 @@ export const createOrder = async (userId: number) => {
     await transaction.rollback();
     throw error;
   }
-};
-
-// Get all orders for a user
-export const getUserOrders = async (userId: number) => {
-  return await Order.findAll({
-    where: { userId },
-    include: [OrderItem],
-    order: [['createdAt', 'DESC']],
-  });
-};
-
-// Get order by ID
-export const getOrderById = async (userId: number, orderId: number) => {
-  const order = await Order.findOne({
-    where: { id: orderId, userId },
-    include: [OrderItem],
-  });
-
-  if (!order) {
-    throw new ApiError(404, 'Order not found');
-  }
-
-  return order;
-};
-
-// Admin get all orders
-export const getAllOrders = async () => {
-  return await Order.findAll({
-    include: [OrderItem],
-    order: [['createdAt', 'DESC']],
-  });
-};
-
-// update order status (admin)
-export const updateOrderStatus = async (
-  orderId: number,
-  status: string
-) => {
-  const order = await Order.findByPk(orderId);
-
-  if (!order) {
-    throw new ApiError(404, 'Order not found');
-  }
-
-  order.status = status;
-  await order.save();
-
-  return order;
 };

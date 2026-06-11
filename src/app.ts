@@ -17,7 +17,17 @@ import categoryRoutes from './routes/categoryRoutes';
 import cartRoutes from './routes/cartRoutes';
 import orderRoutes from './routes/orderRoutes';
 
+import paymentRoutes from './routes/paymentRoutes';
+
+import { stripeWebhook } from './controllers/paymentController';
+
 const app: Application = express();
+
+app.post(
+  '/api/payment/webhook',
+  express.raw({ type: 'application/json' }),
+  stripeWebhook
+);
 
 app.use(express.json());
 app.use(cors());
@@ -31,7 +41,6 @@ app.get('/', (req, res) => {
   res.send('API running...');
 });
 
-app.use(errorHandler);
 
 (async () => {
   try {
@@ -53,4 +62,8 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 
+app.use('/api/payment', paymentRoutes);
+
+app.use(errorHandler);
+  
 export default app;
